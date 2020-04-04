@@ -32,7 +32,7 @@ vcL.rotation = 180
 vcR.start()
 vcL.start()
 
-time.sleep(30)
+time.sleep(10)
 
 vcR.stop()
 vcL.stop()

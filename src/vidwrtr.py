@@ -7,9 +7,12 @@ from datetime import datetime
 from threading import Thread
 import logging
 from seshutils import getts
+from queue import Queue
 
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
+
+FRAME_BUFFER = 5
 
 class VidWrtr(Thread):
 
@@ -29,26 +32,30 @@ class VidWrtr(Thread):
 	#   vcgencmd codec_enabled H264 == Enabled by default on RPi4	
 
 
-	def __init__(self,file,ht,wd,fps):
+	def __init__(self,file,wd,ht,fps):
 		logging.info( "Initializing VidWriter Object:"+file )
 		self.filename = file
 		#self.filename = cv2.VideoCapture(src)
 
-		self.capheight = ht
-		self.capwidth = wd
-		self.framecnt = 0
+		self.fmwd = wd     # Frame Width
+		self.fmht = ht     # Frame Height
+		self.fps  = fps    # FPS output rate to file
+		self.framecnt = 0  # Current count of frame
 
 		# Set the videocodec for the output file
-		#fourcc = cv2.VideoWriter_fourcc(*'VP8')
+		#fourcc = cv2.VideoWriter_fourcc(*'VP80')
 		fourcc = cv2.VideoWriter_fourcc(*'X264')
 
 		# Writer that stores the video file
-		vid = cv2.VideoWriter('output.mov',fourcc, fps, (wd,ht))
+		self.vid = cv2.VideoWriter(self.filename, fourcc, fps, (wd,ht))
+
+		# Initializing thread safe FIFO queue to receive frames for writing
+		self.frmbuf = Queue(FRAME_BUFFER)   
 
 		self.running = False
 		
 		ts, strts = getts()
-		logging.debug( "VideoWriter initialized, fps="+fps+" size=("+str(self.capheight)+","+str(self.capwidth )+")")
+		logging.debug( "VideoWriter initialized, fps="+str(self.fps)+" size=("+str(self.fmwd)+","+str(self.fmht)+")")
 		Thread.__init__(self)
 
 	def start(self):
@@ -65,33 +72,18 @@ class VidWrtr(Thread):
 
 	# Add a frame to the write queue...  TODO: If it's full (block or return error?) 
 	def write(self,frame):
-		logging.debug( "Writting frame" )
+		logging.debug( "Writing frame" )
+		self.frmbuf.put(frame)   # Add frame to the processing queue
 
 	def run(self):
 		# Body
-		logging.info( "Running VidCap" )
-		if( self.warm == False ):
-			time.sleep(2)
-			self.warm == True
+		logging.info( "Running VidWrtr" )
 
 		while(self.running):
-			succ,frame = self.vidfeed.read()
+			frame = self.frmbuf.get()   # Retreive frame for writing from queue, block if none
 			self.framecnt += 1
-
-			if not succ:
-				logging.debug( "Capture frame("+self.camname+"):"+str(self.framecnt) +" err:"+str(succ) )
-			else:
-				logging.debug( "Capture frame("+self.camname+"):"+str(self.framecnt) +" "+str(frame.shape)+" success:"+str(succ) )
-
-				# Not sure we want to rotate = 2inches additional cam separation worth 10% CPU overhead?
-				if( self.rotation > 0 ):
-					image_center = tuple(np.array(frame.shape[1::-1]) / 2)
-					rot_mat = cv2.getRotationMatrix2D(image_center, self.rotation, 1.0)
-					result = cv2.warpAffine(frame, rot_mat, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-					frame = result
-				# temporary throttle
-				#time.sleep(1/10) #100ms
-
-
+			self.vid.write(frame)
+			logging.debug( "Frame Written("+self.filename+"):"+str(self.framecnt))
+			self.frmbuf.task_done()
 
 

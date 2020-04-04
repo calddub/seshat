@@ -7,6 +7,7 @@ from datetime import datetime
 from threading import Thread
 import logging
 from seshutils import getts
+from vidwrtr import VidWrtr
 
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
@@ -54,18 +55,24 @@ class VidCap(Thread):
 		ts, strts = getts()
 		logging.debug( "Timestamp:"+strts )
 		logging.debug( "Capture height="+str(self.capheight)+" width="+str(self.capwidth ))
+
+		## TODO: TEMPORARY!
+		self.vidout = VidWrtr(nm+".mov",640,480,15)
+
 		Thread.__init__(self)
 
 	def start(self):
 		# Body
 		logging.info( "Start VidCap" )
 		self.running = True
+		self.vidout.start()
 		Thread.start(self)
 
 
 	def stop(self):
 		# Body
 		logging.info( "Stopping VidCap" )
+		self.vidout.stop()
 		self.running = False
 
 	def run(self):
@@ -84,6 +91,9 @@ class VidCap(Thread):
 			else:
 				logging.debug( "Capture frame("+self.camname+"):"+str(self.framecnt) +" "+str(frame.shape)+" success:"+str(succ) )
 
+				### TEMPORARY
+				self.vidout.write(frame)
+
 				# Not sure we want to rotate = 2inches additional cam separation worth 10% CPU overhead?
 				if( self.rotation > 0 ):
 					image_center = tuple(np.array(frame.shape[1::-1]) / 2)
@@ -92,7 +102,6 @@ class VidCap(Thread):
 					frame = result
 				# temporary throttle
 				#time.sleep(1/10) #100ms
-
 
 
 				# Temporary conversion steps
