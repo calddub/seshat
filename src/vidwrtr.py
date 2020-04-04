@@ -68,11 +68,12 @@ class VidWrtr(Thread):
 	def stop(self):
 		# Body
 		logging.info( "Stopping VidWrtr" )
+		self.vid.release()
 		self.running = False
 
 	# Add a frame to the write queue...  TODO: If it's full (block or return error?) 
 	def write(self,frame):
-		logging.debug( "Writing frame" )
+		#logging.debug( "Writing frame" )
 		self.frmbuf.put(frame)   # Add frame to the processing queue
 
 	def run(self):
@@ -80,10 +81,16 @@ class VidWrtr(Thread):
 		logging.info( "Running VidWrtr" )
 
 		while(self.running):
-			frame = self.frmbuf.get()   # Retreive frame for writing from queue, block if none
-			self.framecnt += 1
-			self.vid.write(frame)
-			logging.debug( "Frame Written("+self.filename+"):"+str(self.framecnt))
-			self.frmbuf.task_done()
+			try:
+				#frame = self.frmbuf.get()   # Retreive frame for writing from queue, block if none
+				frame = self.frmbuf.get(False,1)   # Retreive frame for writing from queue, block if none
+			except:
+				pass
+			else:
+				self.framecnt += 1
+				self.vid.write(frame)
+				logging.debug( "Frame Written("+self.filename+"):"+str(self.framecnt))
+				self.frmbuf.task_done()
+	
 
 
