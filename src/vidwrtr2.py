@@ -75,15 +75,7 @@ class VidWrtr(Thread):
 	def write(self,frame):
 		#logging.debug( "Writing frame" )
 		#self.frmbuf.put(frame)   # Add frame to the processing queue
-		#self.frmbuf.put_nowait(frame)   # Add frame to the processing queue
-
-		# Test code to eliminate the write queue
-		#self.framecnt += 1
-		#self.vid.write(frame)
-		#logging.debug( "Frame Written("+self.filename+"):"+str(self.framecnt))
-
-		# Do nothing - let's see if we can return to normal performance
-		pass
+		self.frmbuf.put_nowait(frame)   # Add frame to the processing queue
 
 	def run(self):
 		# Body
