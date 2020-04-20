@@ -34,17 +34,22 @@ class VidWrtr(Thread):
 
 	def __init__(self,file,wd,ht,fps):
 		logging.info( "Initializing VidWriter Object:"+file )
-		self.filename = file
-		#self.filename = cv2.VideoCapture(src)
+		# Set the videocodec for the output file
+		# VP8 CODEC   - Doesn't seem to work great
+		#fourcc = cv2.VideoWriter_fourcc(*'VP80')
+		#self.filename = file+".webm"   # webm is extension for VP8
+		# H264 CODEC  - High resource consumption on writes
+		#fourcc = cv2.VideoWriter_fourcc(*'X264')
+		#self.filename = file+".mov"    # webm is extension for H264
+		# MJPG CODEC  - Appears to be decent medium
+		fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+		self.filename = file+".avi"   # avi is extension for mjpg for opencv, not .mjpg!
 
 		self.fmwd = wd     # Frame Width
 		self.fmht = ht     # Frame Height
 		self.fps  = fps    # FPS output rate to file
 		self.framecnt = 0  # Current count of frame
 
-		# Set the videocodec for the output file
-		#fourcc = cv2.VideoWriter_fourcc(*'VP80')
-		fourcc = cv2.VideoWriter_fourcc(*'X264')
 
 		# Writer that stores the video file
 		self.vid = cv2.VideoWriter(self.filename, fourcc, fps, (wd,ht))
@@ -74,7 +79,7 @@ class VidWrtr(Thread):
 	# Add a frame to the write queue...  TODO: If it's full (block or return error?) 
 	def write(self,frame):
 		#logging.debug( "Writing frame" )
-		#self.frmbuf.put(frame)   # Add frame to the processing queue
+		self.frmbuf.put(frame)   # Add frame to the processing queue
 		#self.frmbuf.put_nowait(frame)   # Add frame to the processing queue
 
 		# Test code to eliminate the write queue
@@ -90,6 +95,7 @@ class VidWrtr(Thread):
 		logging.info( "Running VidWrtr" )
 
 		while(self.running):
+			time.sleep(0.01)
 			try:
 				#frame = self.frmbuf.get()   # Retreive frame for writing from queue, block if none
 				frame = self.frmbuf.get(False,1)   # Retreive frame for writing from queue, block if none

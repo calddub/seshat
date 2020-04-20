@@ -57,7 +57,8 @@ class VidCap(Thread):
 		logging.debug( "Capture height="+str(self.capheight)+" width="+str(self.capwidth ))
 
 		## TODO: TEMPORARY!
-		self.vidout = VidWrtr(nm+".mov",640,480,15)
+		#self.vidout = VidWrtr(nm+".mov",640,480,15)
+		self.vidout = VidWrtr(nm,640,480,15)
 
 		Thread.__init__(self)
 
