@@ -40,7 +40,7 @@ class VidWrtr(Thread):
 		#self.filename = file+".webm"   # webm is extension for VP8
 		# H264 CODEC  - High resource consumption on writes
 		#fourcc = cv2.VideoWriter_fourcc(*'X264')
-		#self.filename = file+".mov"    # webm is extension for H264
+		#self.filename = file+".mov"    # mov is extension for H264
 		# MJPG CODEC  - Appears to be decent medium
 		fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 		self.filename = file+".avi"   # avi is extension for mjpg for opencv, not .mjpg!

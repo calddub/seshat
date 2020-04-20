@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 import numpy as np
 import cv2
@@ -12,7 +11,24 @@ from vidwrtr import VidWrtr
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
 
-class VidCap(Thread):
+
+
+# MotionDetector Object
+#   Variables
+#     HistoryCnt
+#     FrameHistoryArray (of touples) - (rawframe, gsframe, blurframe, XXX)
+#     ContourHistory
+#     ThresholdValue
+#     BlurRange
+#     FrameWidth, FrameHeight - Std Frame Size we'll be working with
+#   Methods
+#     Init
+#     CompareFrame( new frame )
+#     getContours()   -- Should CompareFrames return contours when adding a frame?
+#
+
+
+class MotDet():
 
 	# Tentatively - allow for reading from either webcam or files
 	#   Allow framerate override (especially if working from files)
@@ -57,7 +73,8 @@ class VidCap(Thread):
 		logging.debug( "Capture height="+str(self.capheight)+" width="+str(self.capwidth ))
 
 		## TODO: TEMPORARY!
-		self.vidout = VidWrtr(nm+".mov",640,480,15)
+		#self.vidout = VidWrtr(nm+".mov",640,480,15)
+		self.vidout = VidWrtr(nm,640,480,15)
 
 		Thread.__init__(self)
 
