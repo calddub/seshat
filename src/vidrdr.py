@@ -8,7 +8,7 @@ from threading import Thread
 import logging
 from seshutils import getts
 from vidwrtr import VidWrtr
-#from motdet import MotDet
+from motdet import MotDet
 
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
@@ -60,7 +60,7 @@ class VidCap(Thread):
 		## TODO: TEMPORARY!
 		#self.vidout = VidWrtr(nm+".mov",640,480,fps)
 		self.vidout = VidWrtr(nm,640,480,fps)
-		#self.motdet = MotDet((nm,640,480,5)  # 5 cached entries in motion detector frame buffer
+		self.motdet = MotDet(nm,640,480,5)  # 5 cached entries in motion detector frame buffer
 
 		Thread.__init__(self)
 
@@ -94,9 +94,6 @@ class VidCap(Thread):
 			else:
 				logging.debug( "Capture frame("+self.camname+"):"+str(self.framecnt) +" "+str(frame.shape)+" success:"+str(succ) )
 
-				### TEMPORARY
-				self.vidout.write(frame)
-
 				# Not sure we want to rotate = 2inches additional cam separation worth 10% CPU overhead?
 				if( self.rotation > 0 ):
 					image_center = tuple(np.array(frame.shape[1::-1]) / 2)
@@ -106,20 +103,7 @@ class VidCap(Thread):
 				# temporary throttle
 				#time.sleep(1/10) #100ms
 
-
-				# Temporary conversion steps
-				# Leverage gray scale for our image comparison
-				gsframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-				# Blur/fuzz the image a bit to eliminate background noise
-				blurframe = cv2.GaussianBlur(gsframe, (7, 7), 0)
-
-				diff = cv2.absdiff(blurframe.astype("uint8"), blurframe)
-
-				# Thresholding logic to evaluate the difference between before image and after image
-				thresh1 = cv2.threshold(diff, 0.5*100, 255, cv2.THRESH_BINARY)[1]
-				thresh2 = cv2.erode(thresh1, None, iterations=2)
-				thresh3 = cv2.dilate(thresh2, None, iterations=2)
-
-				# Pull the contours / differences between frames. Theorietically minimal change == 0
-				contours = cv2.findContours(thresh3.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+				### TEMPORARY
+				self.vidout.write(frame)
+				self.motdet.addFrame(frame)
 
