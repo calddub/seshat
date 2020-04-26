@@ -54,7 +54,8 @@ class MotDet():
 		self.blurframe = []   # Frame after running through initial Gaussian Blur
 
 		# Motion Detection Info
-		self.diffframe = []   # Diff from previous frame (if applicable)
+		self.avgframe = []    # Composite average of previous X frames
+		self.diffframe = []   # Diff from current frame to composite average
 		self.threshframe = [] # Threadshold calc from based on diff
 		self.erodeframe = []  # Erosion process to reduce noise
 		self.dilateframe = [] # Dilation expands on detected deltas
@@ -67,7 +68,8 @@ class MotDet():
 
 	def addFrame(self,frame):
 		# Temporary conversion steps
-		refidx = self.framecnt++%self.queuesz
+		curidx = self.framecnt++%self.queuesz
+		prvidx = self.framecnt-1
 
 		# Early in the process will need to allocate data so it can be overwritten later on
 		if( self.framecnt < self.queuesz ):
@@ -75,29 +77,39 @@ class MotDet():
 			self.rawframe.append(frame)
 			self.bwframe.append(frame)
 			self.blurframe.append(frame)
+			self.avgframe.append(frame)
 			self.diffframe.append(frame)
 			self.threshframe.append(frame)
 			self.erodeframe.append(frame)
 			self.dilateframe.append(frame)
 
 		# Leverage gray scale for our image comparison
-		self.bwframe[refidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		self.bwframe[curidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		# Blur/fuzz the image a bit to eliminate background noise
-		self.blurframe[refidx] = cv2.GaussianBlur(self.bwframe[refidx], (7, 7), 0)
+		self.blurframe[curidx] = cv2.GaussianBlur(self.bwframe[curidx], (7, 7), 0)
 
-		diff = cv2.absdiff(blurframe.astype("uint8"), blurframe)
+		# Only can perform frame differences if there was a previous frame
+		if( prvidx <= 0 ):
+			return
+
+		# Store a weighted average of the previous 5 frames
+		self.avgframe[curidx] = avgframe[prvidx].copy().astype("float") # grab previous average
+		cv2.accumulateWeighted(self.blurframe[curidx], self.avgframe[curidx], 0.2 )
+
+		# Perform difference of current captured from to (previous | 5frame average)
+		self.diffframe[curidx] = cv2.absdiff(blurframe[curidx].astype("uint8"), self.blurframe[prvidx])
+		#self.diffframe[curidx] = cv2.absdiff(avgframe[curidx].astype("uint8"), blurframe)
 
 		# Thresholding logic to evaluate the difference between before image and after image
-		thresh1 = cv2.threshold(diff, 0.5*100, 255, cv2.THRESH_BINARY)[1]
-		thresh2 = cv2.erode(thresh1, None, iterations=2)
-		thresh3 = cv2.dilate(thresh2, None, iterations=2)
+		self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.5*100, 255, cv2.THRESH_BINARY)[1]
+		self.erodeframe[curidx] = cv2.erode(self.threshframe[curidx], None, iterations=2)
+		self.dilateframe[curidx] = cv2.erode(self.erodeframe[curidx], None, iterations=2)
 
-	def calcDiff(self,frame1,frame2):
-		pass
+		# Pull the contours / differences between frames. Theorietically minimal change == 0
+		self.contours[curidx] = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
 
 	def getContours(self):
 		pass
 
-	def getContoursByID(self,frameid):
-		pass
 
