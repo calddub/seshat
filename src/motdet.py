@@ -68,7 +68,8 @@ class MotDet():
 
 	def addFrame(self,frame):
 		# Temporary conversion steps
-		curidx = self.framecnt++%self.queuesz
+		self.framecnt += 1
+		curidx = self.framecnt%self.queuesz
 		prvidx = self.framecnt-1
 
 		# Early in the process will need to allocate data so it can be overwritten later on

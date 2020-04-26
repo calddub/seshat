@@ -8,6 +8,7 @@ from threading import Thread
 import logging
 from seshutils import getts
 from vidwrtr import VidWrtr
+#from motdet import MotDet
 
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
@@ -57,8 +58,9 @@ class VidCap(Thread):
 		logging.debug( "Capture height="+str(self.capheight)+" width="+str(self.capwidth ))
 
 		## TODO: TEMPORARY!
-		#self.vidout = VidWrtr(nm+".mov",640,480,15)
-		self.vidout = VidWrtr(nm,640,480,15)
+		#self.vidout = VidWrtr(nm+".mov",640,480,fps)
+		self.vidout = VidWrtr(nm,640,480,fps)
+		#self.motdet = MotDet((nm,640,480,5)  # 5 cached entries in motion detector frame buffer
 
 		Thread.__init__(self)
 

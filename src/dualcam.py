@@ -21,10 +21,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 #vcR = VidCap(0,"RCam",640,480,30)
-vcR = VidCap(0,"RCam",640,480,15)
+vcR = VidCap(0,"RCam",640,480,10)
 vcR.rotation = 180
 #vcL = VidCap(2,"LCam",640,480,30)
-vcL = VidCap(2,"LCam",640,480,15)
+vcL = VidCap(2,"LCam",640,480,10)
 vcL.rotation = 180
 
 #vc2 = VidCap(2,640,480)
@@ -32,7 +32,7 @@ vcL.rotation = 180
 vcR.start()
 vcL.start()
 
-time.sleep(30)
+time.sleep(8)
 
 vcR.stop()
 vcL.stop()
