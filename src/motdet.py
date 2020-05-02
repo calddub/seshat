@@ -115,53 +115,56 @@ class MotDet():
 
 		logging.debug( "Adding frame "+str(self.framecnt)+" IDX:"+str(curidx)+","+str(prvidx) )
 
+
+		#### Commenting next flull section ####
+
 		# Early in the process will need to allocate data so it can be overwritten later on
-		if( self.framecnt < self.queuesz ):
-			
-			self.rawframe.append(frame.copy().astype("float"))
-			self.bwframe.append(frame.copy().astype("float"))
-			self.blurframe.append(frame.copy().astype("float"))
-			#self.avgframe.append(frame.copy().astype("float"))
-			self.diffframe.append(frame.copy().astype("float"))
-			self.threshframe.append(frame.copy().astype("float"))
-			self.erodeframe.append(frame.copy().astype("float"))
-			self.dilateframe.append(frame.copy().astype("float"))
+		### if( self.framecnt < self.queuesz ):
+		### 	
+		### 	self.rawframe.append(frame.copy().astype("float"))
+		### 	self.bwframe.append(frame.copy().astype("float"))
+		### 	self.blurframe.append(frame.copy().astype("float"))
+		### 	#self.avgframe.append(frame.copy().astype("float"))
+		### 	self.diffframe.append(frame.copy().astype("float"))
+		### 	self.threshframe.append(frame.copy().astype("float"))
+		### 	self.erodeframe.append(frame.copy().astype("float"))
+		### 	self.dilateframe.append(frame.copy().astype("float"))
 
-		#self.r2out.write(self.rawframe[curidx])
-		# Leverage gray scale for our image comparison
-		self.bwframe[curidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		#tbwframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		#self.bwout.write(self.bwframe[curidx])
-		#self.bwout.write(tbwframe)
-		# Blur/fuzz the image a bit to eliminate background noise
-		self.blurframe[curidx] = cv2.GaussianBlur(self.bwframe[curidx], (7, 7), 0)
-		#self.blrout.write(self.blurframe[curidx])
+		#se### lf.r2out.write(self.rawframe[curidx])
+		### # Leverage gray scale for our image comparison
+		### self.bwframe[curidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		### #tbwframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		### #self.bwout.write(self.bwframe[curidx])
+		### #self.bwout.write(tbwframe)
+		### # Blur/fuzz the image a bit to eliminate background noise
+		### self.blurframe[curidx] = cv2.GaussianBlur(self.bwframe[curidx], (7, 7), 0)
+		### #self.blrout.write(self.blurframe[curidx])
 
-		# Only can perform frame differences if there was a previous frame
-		if( self.framecnt <= 0 ):
-			return
+		### # Only can perform frame differences if there was a previous frame
+		### if( self.framecnt <= 0 ):
+		### 	return
 
-		#logging.debug( "   TEST SIZE OF ARRAY: "+str(len(self.avgframe)))
+		### #logging.debug( "   TEST SIZE OF ARRAY: "+str(len(self.avgframe)))
 
-		# Store a weighted average of the previous 5 frames
-		#self.avgframe[curidx] = self.avgframe[prvidx].copy().astype("float") # grab previous average
-		#cv2.accumulateWeighted(self.blurframe[curidx], self.avgframe[curidx], 0.2 )
+		### # Store a weighted average of the previous 5 frames
+		### #self.avgframe[curidx] = self.avgframe[prvidx].copy().astype("float") # grab previous average
+		### #cv2.accumulateWeighted(self.blurframe[curidx], self.avgframe[curidx], 0.2 )
 
-		# Perform difference of current captured from to (previous | 5frame average)
-		self.diffframe[curidx] = cv2.absdiff(self.blurframe[curidx].astype("uint8"), self.blurframe[prvidx])
-		#self.dfout.write(self.diffframe[curidx])
-		#self.diffframe[curidx] = cv2.absdiff(self.avgframe[curidx].astype("uint8"), self.blurframe[curidx])
+		### # Perform difference of current captured from to (previous | 5frame average)
+		### self.diffframe[curidx] = cv2.absdiff(self.blurframe[curidx].astype("uint8"), self.blurframe[prvidx])
+		### #self.dfout.write(self.diffframe[curidx])
+		### #self.diffframe[curidx] = cv2.absdiff(self.avgframe[curidx].astype("uint8"), self.blurframe[curidx])
 
-		# Thresholding logic to evaluate the difference between before image and after image
-		self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.2*100, 255, cv2.THRESH_BINARY)[1]
-		#self.trout.write(self.threshframe[curidx])
-		self.erodeframe[curidx] = cv2.erode(self.threshframe[curidx], None, iterations=2)
-		self.dilateframe[curidx] = cv2.erode(self.erodeframe[curidx], None, iterations=2)
+		### # Thresholding logic to evaluate the difference between before image and after image
+		### self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.2*100, 255, cv2.THRESH_BINARY)[1]
+		### #self.trout.write(self.threshframe[curidx])
+		### self.erodeframe[curidx] = cv2.erode(self.threshframe[curidx], None, iterations=2)
+		### self.dilateframe[curidx] = cv2.erode(self.erodeframe[curidx], None, iterations=2)
 
-		# Pull the contours / differences between frames. Theorietically minimal change == 0
-		tmpcontours = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		print("Contour Array: %d length"%(len(tmpcontours)))
-		#self.contours[curidx] = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		### ### # Pull the contours / differences between frames. Theorietically minimal change == 0
+		### tmpcontours = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		### print("Contour Array: %d length"%(len(tmpcontours)))
+		### #self.contours[curidx] = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
 	def getContours(self):
