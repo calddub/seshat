@@ -76,6 +76,7 @@ class VidCap(Thread):
 		# Body
 		logging.info( "Stopping VidCap" )
 		self.vidout.stop()
+		self.motdet.close()
 		self.running = False
 
 	def run(self):
@@ -106,4 +107,8 @@ class VidCap(Thread):
 				### TEMPORARY
 				self.vidout.write(frame)
 				self.motdet.addFrame(frame)
+
+
+	def getMotDet(self):
+		return self.motdet;
 

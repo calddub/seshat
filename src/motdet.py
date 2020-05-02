@@ -6,7 +6,7 @@ from datetime import datetime
 #from threading import Thread
 import logging
 from seshutils import getts
-#from vidwrtr import VidWrtr
+from vidwrtr import VidWrtr
 
 #logging.basicConfig(filename='seshat.log',level=logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
@@ -61,6 +61,18 @@ class MotDet():
 		self.dilateframe = [] # Dilation expands on detected deltas
 		self.contours = []   # Calculated contours for motion within frame
 
+		self.r1out = VidWrtr(nm+"-raw1",640,480,10)
+		self.r1out.start()
+		self.r2out = VidWrtr(nm+"-raw2",640,480,10)
+		self.r2out.start()
+		self.bwout = VidWrtr(nm+"-bw",640,480,10)
+		self.bwout.start()
+		self.blrout = VidWrtr(nm+"-blr",640,480,10)
+		self.blrout.start()
+		self.dfout = VidWrtr(nm+"-df",640,480,10)
+		self.dfout.start()
+		self.trout = VidWrtr(nm+"-tr",640,480,10)
+		self.trout.start()
 
 		ts, strts = getts()
 		logging.debug( "MotionDetector initialized - Timestamp:"+strts )
@@ -72,6 +84,7 @@ class MotDet():
 		curidx = self.framecnt%self.queuesz
 		prvidx = (self.framecnt-1)%self.queuesz
 
+		self.r1out.write(frame)
 		logging.debug( "Adding frame "+str(self.framecnt)+" IDX:"+str(curidx)+","+str(prvidx) )
 
 		# Early in the process will need to allocate data so it can be overwritten later on
@@ -86,10 +99,13 @@ class MotDet():
 			self.erodeframe.append(frame.copy().astype("float"))
 			self.dilateframe.append(frame.copy().astype("float"))
 
+		#self.r2out.write(self.rawframe[curidx])
 		# Leverage gray scale for our image comparison
 		self.bwframe[curidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		self.bwout.write(self.bwframe[curidx])
 		# Blur/fuzz the image a bit to eliminate background noise
 		self.blurframe[curidx] = cv2.GaussianBlur(self.bwframe[curidx], (7, 7), 0)
+		self.blrout.write(self.blurframe[curidx])
 
 		# Only can perform frame differences if there was a previous frame
 		if( self.framecnt <= 0 ):
@@ -103,19 +119,31 @@ class MotDet():
 
 		# Perform difference of current captured from to (previous | 5frame average)
 		self.diffframe[curidx] = cv2.absdiff(self.blurframe[curidx].astype("uint8"), self.blurframe[prvidx])
+		self.dfout.write(self.diffframe[curidx])
 		#self.diffframe[curidx] = cv2.absdiff(self.avgframe[curidx].astype("uint8"), self.blurframe[curidx])
 
 		# Thresholding logic to evaluate the difference between before image and after image
-		self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.5*100, 255, cv2.THRESH_BINARY)[1]
+		self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.2*100, 255, cv2.THRESH_BINARY)[1]
+		self.trout.write(self.threshframe[curidx])
 		self.erodeframe[curidx] = cv2.erode(self.threshframe[curidx], None, iterations=2)
 		self.dilateframe[curidx] = cv2.erode(self.erodeframe[curidx], None, iterations=2)
 
 		# Pull the contours / differences between frames. Theorietically minimal change == 0
-		#self.contours[curidx] = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 		tmpcontours = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		print("Contour Array: %d length"%(len(tmpcontours)))
+		#self.contours[curidx] = cv2.findContours(self.dilateframe[curidx].copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
 	def getContours(self):
 		pass
+
+
+	def close(self):
+		self.r1out.stop()
+		self.r2out.stop()
+		self.bwout.stop()
+		self.blrout.stop()
+		self.dfout.stop()
+		self.trout.stop()
 
 
