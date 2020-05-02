@@ -61,18 +61,18 @@ class MotDet():
 		self.dilateframe = [] # Dilation expands on detected deltas
 		self.contours = []   # Calculated contours for motion within frame
 
-		self.r1out = VidWrtr(nm+"-raw1",640,480,10)
+		self.r1out = VidWrtr(nm+"-1-raw",640,480,10,True)
 		self.r1out.start()
-		self.r2out = VidWrtr(nm+"-raw2",640,480,10)
-		self.r2out.start()
-		self.bwout = VidWrtr(nm+"-bw",640,480,10)
+		self.bwout = VidWrtr(nm+"-2-blwt",640,480,10,False)
 		self.bwout.start()
-		self.blrout = VidWrtr(nm+"-blr",640,480,10)
-		self.blrout.start()
-		self.dfout = VidWrtr(nm+"-df",640,480,10)
+		self.blout = VidWrtr(nm+"-3-blur",640,480,10,False)
+		self.blout.start()
+		self.dfout = VidWrtr(nm+"-4-diff",640,480,10,False)
 		self.dfout.start()
-		self.trout = VidWrtr(nm+"-tr",640,480,10)
-		self.trout.start()
+		self.thout = VidWrtr(nm+"-5-thrsh",640,480,10,True)
+		self.thout.start()
+		self.edout = VidWrtr(nm+"-6-erddil",640,480,10,False)
+		self.edout.start()
 
 		ts, strts = getts()
 		logging.debug( "MotionDetector initialized - Timestamp:"+strts )
@@ -85,6 +85,34 @@ class MotDet():
 		prvidx = (self.framecnt-1)%self.queuesz
 
 		self.r1out.write(frame)
+		tbwframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		print( "Post frame conversion... bwframe info: %s"%(str(tbwframe.shape)))
+		self.bwout.write(tbwframe)
+		tblurframe = cv2.GaussianBlur(tbwframe, (7, 7), 0)
+		self.blout.write(tblurframe)
+		if( self.framecnt <= 1 ):
+			self.tlastblur = tblurframe.copy()
+
+		# Perform difference of current captured from to (previous | 5frame average)
+		tdfframe = cv2.absdiff(tblurframe.astype("uint8"), self.tlastblur)
+		self.tlastblur = tblurframe.copy()
+		self.dfout.write(tdfframe)
+
+		#self.diffframe[curidx] = cv2.absdiff(self.avgframe[curidx].astype("uint8"), self.blurframe[curidx])
+
+		# Thresholding logic to evaluate the difference between before image and after image
+		tthreshframe = cv2.threshold(tdfframe, 0.5*100, 255, cv2.THRESH_BINARY)[1]
+		self.thout.write(tthreshframe)
+		terdframe = cv2.erode(tthreshframe, None, iterations=2)
+		tdilframe = cv2.erode(terdframe, None, iterations=2)
+		self.edout.write(tthreshframe)
+
+		# Pull the contours / differences between frames. Theorietically minimal change == 0
+		tcont = cv2.findContours(tdilframe.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+		print(" First Attempt - Contour Array: %d length"%(len(tcont)))
+
+
 		logging.debug( "Adding frame "+str(self.framecnt)+" IDX:"+str(curidx)+","+str(prvidx) )
 
 		# Early in the process will need to allocate data so it can be overwritten later on
@@ -102,10 +130,12 @@ class MotDet():
 		#self.r2out.write(self.rawframe[curidx])
 		# Leverage gray scale for our image comparison
 		self.bwframe[curidx] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		self.bwout.write(self.bwframe[curidx])
+		#tbwframe = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		#self.bwout.write(self.bwframe[curidx])
+		#self.bwout.write(tbwframe)
 		# Blur/fuzz the image a bit to eliminate background noise
 		self.blurframe[curidx] = cv2.GaussianBlur(self.bwframe[curidx], (7, 7), 0)
-		self.blrout.write(self.blurframe[curidx])
+		#self.blrout.write(self.blurframe[curidx])
 
 		# Only can perform frame differences if there was a previous frame
 		if( self.framecnt <= 0 ):
@@ -119,12 +149,12 @@ class MotDet():
 
 		# Perform difference of current captured from to (previous | 5frame average)
 		self.diffframe[curidx] = cv2.absdiff(self.blurframe[curidx].astype("uint8"), self.blurframe[prvidx])
-		self.dfout.write(self.diffframe[curidx])
+		#self.dfout.write(self.diffframe[curidx])
 		#self.diffframe[curidx] = cv2.absdiff(self.avgframe[curidx].astype("uint8"), self.blurframe[curidx])
 
 		# Thresholding logic to evaluate the difference between before image and after image
 		self.threshframe[curidx] = cv2.threshold(self.diffframe[curidx], 0.2*100, 255, cv2.THRESH_BINARY)[1]
-		self.trout.write(self.threshframe[curidx])
+		#self.trout.write(self.threshframe[curidx])
 		self.erodeframe[curidx] = cv2.erode(self.threshframe[curidx], None, iterations=2)
 		self.dilateframe[curidx] = cv2.erode(self.erodeframe[curidx], None, iterations=2)
 
@@ -140,10 +170,10 @@ class MotDet():
 
 	def close(self):
 		self.r1out.stop()
-		self.r2out.stop()
 		self.bwout.stop()
-		self.blrout.stop()
+		self.blout.stop()
 		self.dfout.stop()
-		self.trout.stop()
+		self.thout.stop()
+		self.edout.stop()
 
 

@@ -59,7 +59,7 @@ class VidCap(Thread):
 
 		## TODO: TEMPORARY!
 		#self.vidout = VidWrtr(nm+".mov",640,480,fps)
-		self.vidout = VidWrtr(nm,640,480,fps)
+		self.vidout = VidWrtr(nm,640,480,fps,True)
 		self.motdet = MotDet(nm,640,480,5)  # 5 cached entries in motion detector frame buffer
 
 		Thread.__init__(self)
@@ -96,11 +96,11 @@ class VidCap(Thread):
 				logging.debug( "Capture frame("+self.camname+"):"+str(self.framecnt) +" "+str(frame.shape)+" success:"+str(succ) )
 
 				# Not sure we want to rotate = 2inches additional cam separation worth 10% CPU overhead?
-				if( self.rotation > 0 ):
-					image_center = tuple(np.array(frame.shape[1::-1]) / 2)
-					rot_mat = cv2.getRotationMatrix2D(image_center, self.rotation, 1.0)
-					result = cv2.warpAffine(frame, rot_mat, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-					frame = result
+				#if( self.rotation > 0 ):
+				#	image_center = tuple(np.array(frame.shape[1::-1]) / 2)
+				#	rot_mat = cv2.getRotationMatrix2D(image_center, self.rotation, 1.0)
+				#	result = cv2.warpAffine(frame, rot_mat, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+				#	frame = result
 				# temporary throttle
 				#time.sleep(1/10) #100ms
 

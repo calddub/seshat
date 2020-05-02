@@ -32,7 +32,7 @@ class VidWrtr(Thread):
 	#   vcgencmd codec_enabled H264 == Enabled by default on RPi4	
 
 
-	def __init__(self,file,wd,ht,fps):
+	def __init__(self,file,wd,ht,fps,clr):
 		logging.info( "Initializing VidWriter Object:"+file )
 		# Set the videocodec for the output file
 		# VP8 CODEC   - Doesn't seem to work great
@@ -52,7 +52,7 @@ class VidWrtr(Thread):
 
 
 		# Writer that stores the video file
-		self.vid = cv2.VideoWriter(self.filename, fourcc, fps, (wd,ht))
+		self.vid = cv2.VideoWriter(self.filename, fourcc, fps, (wd,ht), clr)
 
 		# Initializing thread safe FIFO queue to receive frames for writing
 		self.frmbuf = Queue(FRAME_BUFFER)   
